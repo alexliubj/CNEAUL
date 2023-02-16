@@ -1,3 +1,20 @@
+local FNV1 = {}
+
+function FNV1.hash(str)
+  local FNV_offset_basis = 2166136261
+  local FNV_prime = 16777619
+  local hash = FNV_offset_basis
+  
+  for i = 1, #str do
+    hash = bit.bxor(hash, string.byte(str, i))
+    hash = hash * FNV_prime
+  end
+  
+  return hash
+end
+
+return FNV1
+
 local function encrypt_nested_strings(tbl, seed)
   local alphabet = gen_alphabet(seed)
   local mapping_str = ""
