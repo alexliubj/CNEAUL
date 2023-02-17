@@ -10,69 +10,122 @@ function prng(seed)
   end
 end
 
-function sort_table(table)
+function extract_keys(table)
   local keys = {}
-
-  for key in pairs(table) do
-    table.insert(keys, key)
-  end
-
-  table.sort(keys)
-
-  for i, key in ipairs(keys) do
-    local value = table[key]
-    if type(value) == "table" then
-      table[key] = sort_table(value)
-    end
-  end
-
-  return table
-end
-
-
-function split_table(table)
-  local keys = {}
-  local values = {}
-
   for key, value in pairs(table) do
-    table.insert(keys, key)
     if type(value) == "table" then
-      table.insert(values, split_table(value))
+      -- recursively extract keys from nested tables
+      local nested_keys = extract_keys(value)
+      for _, nested_key in ipairs(nested_keys) do
+        table.insert(keys, key .. "." .. nested_key)
+      end
     else
-      table.insert(values, value)
+      table.insert(keys, key)
     end
   end
-
-  return keys, values
+  table.sort(keys)
+  return keys
 end
 
-
-function join_table(keys, values)
-  local table = {}
-
-  for i, key in ipairs(keys) do
-    if type(values[i]) == "table" then
-      table[key] = join_table(values[i][1], values[i][2])
-    else
-      table[key] = values[i]
+function extract_values(t, keys)
+  local values = {}
+  for _, key in ipairs(keys) do
+    local value = t
+    for k in key:gmatch("[^%.]+") do
+      value = value[k]
+      if not value then break end
     end
+    table.insert(values, value)
   end
-
-  return table
+  return values
 end
 
-
-local my_table = {
-  foo = "bar",
-  baz = {
-    qux = 42,
-    quux = {
-      corge = true,
-      grault = false
+-- example table
+local t = {
+  foo = 1,
+  bar = {
+    baz = 2,
+    qux = {
+      quux = 3
     }
   }
 }
 
-local keys, values = split_table(my_table)
-local new_table = join_table(keys, values)
+-- extract keys and print them
+local keys = extract_keys(t)
+for _, key in ipairs(keys) do
+  print(key)
+end
+
+-- extract values based on the keys
+local values = extract_values(t, keys)
+
+-- print the values
+for _, value in ipairs(values) do
+  print(value)
+end
+
+function create_table_from_key_value_arrays(keys, values)
+  local t = {}
+  for i = 1, #keys do
+    local key = keys[i]
+    local value = values[i]
+    local subtable = t
+    for subkey in key:gmatch("[^%.]+") do
+      if not subtable[subkey] then
+        subtable[subkey] = {}
+      end
+      subtable = subtable[subkey]
+    end
+    subtable[#subtable + 1] = value
+  end
+  return t
+end
+
+-- example table
+local t = {
+  foo = 1,
+  bar = {
+    baz = 2,
+    qux = {
+      quux = 3
+    }
+  }
+}
+
+-- function create_table_from_key_value_arrays(keys, values)
+--   local t = {}
+--   for i = 1, #keys do
+--     local key = keys[i]
+--     local value = values[i]
+--     local subtable = t
+--     for subkey in key:gmatch("[^%.]+") do
+--       if not subtable[subkey] then
+--         subtable[subkey] = {}
+--       end
+--       subtable = subtable[subkey]
+--     end
+--     if #subtable == 0 then
+--       subtable[1] = value
+--     else
+--       error("Multiple values found for key " .. key)
+--     end
+--   end
+--   return t
+-- end
+
+
+-- extract keys and values
+local keys = extract_keys(t)
+local values = extract_values(t, keys)
+
+-- create a new table from the keys and values
+local new_table = create_table_from_key_value_arrays(keys, values)
+
+-- print the new table
+for key, value in pairs(new_table) do
+  print(key, value)
+end
+
+
 
