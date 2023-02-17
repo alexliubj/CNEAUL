@@ -19,15 +19,23 @@ function sort_table(table)
 
   table.sort(keys)
 
-  return keys
+  for i, key in ipairs(keys) do
+    local value = table[key]
+    if type(value) == "table" then
+      table[key] = sort_table(value)
+    end
+  end
+
+  return table
 end
 
+
 function split_table(table)
-  local keys = sort_table(table)
+  local keys = {}
   local values = {}
 
-  for _, key in ipairs(keys) do
-    local value = table[key]
+  for key, value in pairs(table) do
+    table.insert(keys, key)
     if type(value) == "table" then
       table.insert(values, split_table(value))
     else
@@ -37,6 +45,7 @@ function split_table(table)
 
   return keys, values
 end
+
 
 function join_table(keys, values)
   local table = {}
